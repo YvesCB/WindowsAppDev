@@ -21,6 +21,10 @@ struct StateInfo
     int rect_pos_y;
     int rect_width;
     int rect_height;
+
+    float circ_pos_x;
+    float circ_pos_y;
+    float circ_r;
 };
 
 inline StateInfo* GetAppState(HWND hwnd)
@@ -28,6 +32,11 @@ inline StateInfo* GetAppState(HWND hwnd)
     LONG_PTR ptr = GetWindowLongPtr(hwnd, GWLP_USERDATA);
     StateInfo *pState = (StateInfo*) ptr;
     return pState;
+};
+
+inline float sqr(float x)
+{
+    return(x*x);
 };
 
 internal void resizeDIBSection(OffscreenBuffer *buffer, int width, int height)
@@ -81,23 +90,23 @@ internal Dimensions getWindowDimensions(HWND window)
 }
 
 
-internal void renderGradient(OffscreenBuffer *buffer, StateInfo *state)
+internal void render(OffscreenBuffer *buffer, StateInfo *state)
 {
+    float factor = 0.0f;
     uint8_t *row = (uint8_t *)buffer->memory;
-    for (int y = 0; y < buffer->height; y++)
+    for (int y = 0; y < buffer->height*2; y++)
     {
         uint32_t *pixel = (uint32_t *)row;
-        for (int x = 0; x < buffer->width; x++)
+        for (int x = 0; x < buffer->width*2; x++)
         {
-            if (    x > state->rect_pos_x - state->rect_width/2 && 
-                    x < state->rect_pos_x + state->rect_width/2 &&
-                    y > state->rect_pos_y - state->rect_height/2 && 
-                    y < state->rect_pos_y + state->rect_height/2)
+            if (sqr(x - state->circ_pos_x) + sqr(y - state->circ_pos_y) <= sqr(state->circ_r))
             {
-                *pixel++ = (150 << 16) | (150 << 8) | 150;
+                factor += 0.25f;
             }
-            else {
-                *pixel++ = (200 << 16) | (200 << 8) | 200;
+            if (x % 2 == 0 && y % 2 == 0)
+            {
+                *pixel++ = (uint32_t)(factor * (200 << 16 | 200 << 8 | 200));
+                factor = 0.0f;
             }
             //uint8_t blue = (uint8_t)x;
             //uint8_t green = (uint8_t)y;
@@ -129,7 +138,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     pState->rect_width = 100;
     pState->rect_height = 100;
 
-    renderGradient(&globalBackBuffer, pState);
+    pState->circ_pos_x = 200.0f;
+    pState->circ_pos_y = 200.0f;
+    pState->circ_r = 50.0f;
+
+    render(&globalBackBuffer, pState);
 
     if (pState == NULL)
     {
@@ -189,6 +202,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+
+    case WM_SIZE:
+        Dimensions dimension = getWindowDimensions(hwnd);
+        resizeDIBSection(&globalBackBuffer, dimension.width, dimension.height);
+        RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE|RDW_INTERNALPAINT);
         
     case WM_PAINT:
         {
@@ -196,7 +214,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            renderGradient(&globalBackBuffer, pState);
+            render(&globalBackBuffer, pState);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);
@@ -206,33 +224,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         if (wParam == VK_UP) 
         {
-            pState->rect_pos_y -= 5;
+            pState->circ_pos_y -= 5;
         }
-        else if (wParam == VK_DOWN)
+        if (wParam == VK_DOWN)
         {
-            pState->rect_pos_y += 5;
+            pState->circ_pos_y += 5;
         }
-        else if (wParam == VK_RIGHT)
+        if (wParam == VK_RIGHT)
         {
-            pState->rect_pos_x += 5;
+            pState->circ_pos_x += 5;
         }
-        else if (wParam == VK_LEFT)
+        if (wParam == VK_LEFT)
         {
-            pState->rect_pos_x -= 5;
+            pState->circ_pos_x -= 5;
         }
-        else if (wParam == 'W')
+        if (wParam == 'W')
         {
-            pState->rect_height += 2;
+            pState->circ_r += 2;
         }
-        else if (wParam == 'S')
+        if (wParam == 'S')
         {
-            pState->rect_height -= 2;
+            pState->circ_r -= 2;
         }
-        else if (wParam == 'A')
+        if (wParam == 'A')
         {
             pState->rect_width -= 2;
         }
-        else if (wParam == 'D')
+        if (wParam == 'D')
         {
             pState->rect_width += 2;
         }
