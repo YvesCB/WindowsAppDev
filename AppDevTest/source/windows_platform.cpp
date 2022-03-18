@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "windows_platform.h"
+#include "my_math.h"
 
 #define global_variable static
 #define internal static
@@ -15,18 +15,6 @@ global_variable OffscreenBuffer globalBackBuffer;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-struct StateInfo
-{
-    int rect_pos_x;
-    int rect_pos_y;
-    int rect_width;
-    int rect_height;
-
-    float circ_pos_x;
-    float circ_pos_y;
-    float circ_r;
-};
-
 inline StateInfo* GetAppState(HWND hwnd)
 {
     LONG_PTR ptr = GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -34,10 +22,6 @@ inline StateInfo* GetAppState(HWND hwnd)
     return pState;
 };
 
-inline float sqr(float x)
-{
-    return(x*x);
-};
 
 internal void resizeDIBSection(OffscreenBuffer *buffer, int width, int height)
 {
@@ -90,24 +74,34 @@ internal Dimensions getWindowDimensions(HWND window)
 }
 
 
-internal void render(OffscreenBuffer *buffer, StateInfo *state)
+internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
 {
     float factor = 0.0f;
     uint8_t *row = (uint8_t *)buffer->memory;
-    for (int y = 0; y < buffer->height*2; y++)
+    for (int y = 0; y < buffer->height*superSample; y+=superSample)
     {
         uint32_t *pixel = (uint32_t *)row;
-        for (int x = 0; x < buffer->width*2; x++)
+        for (int x = 0; x < buffer->width*superSample; x+=superSample)
         {
-            if (sqr(x - state->circ_pos_x) + sqr(y - state->circ_pos_y) <= sqr(state->circ_r))
+            factor = 0.0f;
+            for (int i = 0; i < superSample; i++)
             {
-                factor += 0.25f;
+                for (int k = 0; k < superSample; k++)
+                {
+                    //if (sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) >= sqr(state->circ_r) && 
+                         //sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) <= sqr(state->circ_r + 10))
+                    
+                    float x_mindist = newtonFindZero(squareDerivDistPointCurve, x, y, state); 
+                    float minDistSqr = squareDistancePointCurve(parabola, x_mindist, state, x, y);
+                    if (minDistSqr <= 16)
+                    {
+                        factor += 1.0f/(superSample*superSample);
+                    }
+
+                }
+
             }
-            if (x % 2 == 0 && y % 2 == 0)
-            {
-                *pixel++ = (uint32_t)(factor * (200 << 16 | 200 << 8 | 200));
-                factor = 0.0f;
-            }
+            *pixel++ = (uint32_t)(factor * (200 << 16 | 200 << 8 | 200));
             //uint8_t blue = (uint8_t)x;
             //uint8_t green = (uint8_t)y;
 
@@ -141,8 +135,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     pState->circ_pos_x = 200.0f;
     pState->circ_pos_y = 200.0f;
     pState->circ_r = 50.0f;
+    
+    pState->parab_h = 640.0f;
+    pState->parab_k = 600.0f;
+    pState->parab_a = -0.005f;
 
-    render(&globalBackBuffer, pState);
+    render(&globalBackBuffer, pState, 2);
 
     if (pState == NULL)
     {
@@ -214,7 +212,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            render(&globalBackBuffer, pState);
+            render(&globalBackBuffer, pState, 2);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);
