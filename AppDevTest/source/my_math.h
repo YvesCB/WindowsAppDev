@@ -14,26 +14,42 @@ inline float parabola(float x, StateInfo* state)
     return state->parab_a*(x-state->parab_h)*(x-state->parab_h) +state->parab_k;
 };
 
-float deriveAtX(float (*f)(float value_x, float p_x, float p_y, StateInfo* state), 
-        float x, float p_x, float p_y, StateInfo* state)
+
+inline float squareDerivDistPointCurve(float x, float p_x, float p_y, StateInfo* state)
 {
-    float eps = 0.1f;
-    float sample1 = (f(x+eps, p_x, p_y, state) - f(x, p_x, p_y, state))/eps; 
-    float sample2 = (f(x-eps, p_x, p_y, state) - f(x, p_x, p_y, state))/(-1*eps); 
+    return 2 * (2 * state->parab_a * (x-state->parab_h) * (state->parab_a * sqr(x-state->parab_h) + state->parab_k - p_y) - p_x + x);
+}
+
+float deriveAtX(float x, float p_x, float p_y, StateInfo* state)
+{
+    float eps = 0.01f;
+    float sample1 = (squareDerivDistPointCurve(x+eps, p_x, p_y, state) - squareDerivDistPointCurve(x, p_x, p_y, state))/eps; 
+    float sample2 = (squareDerivDistPointCurve(x-eps, p_x, p_y, state) - squareDerivDistPointCurve(x, p_x, p_y, state))/(-1*eps); 
 
     return (sample1 + sample2)/2.0f;
 }
 
-float newtonFindZero(float (*f)(float value_x, float p_x, float p_y, StateInfo* state),
-        float p_x, float p_y, StateInfo* state)
+float newtonFindZero(float p_x, float p_y, StateInfo* state)
 {
     float margin = 0.001f;
     int attempt = 0;
     float guess = 1.0f;
 
-    while(f(guess, p_x, p_y, state) > margin || f(guess, p_x, p_y, state) < -1.0f * margin)
+    if(p_x <= state->parab_h)
     {
-        guess = guess - (f(guess, p_x, p_y, state)/deriveAtX(f, guess, p_x, p_y, state));
+        guess = p_x + (state->parab_h - p_x) / 2.0f;
+    }
+    else 
+    {
+        guess = p_x - (p_x - state->parab_h) / 2.0f;    
+    }
+
+    float squareDerivAtGuess = 1.0f;
+
+    while(squareDerivAtGuess > margin || squareDerivAtGuess < -1.0f * margin)
+    {
+        guess = guess - (squareDerivDistPointCurve(guess, p_x, p_y, state)/deriveAtX(guess, p_x, p_y, state));
+        squareDerivAtGuess = squareDerivDistPointCurve(guess, p_x, p_y, state);
         attempt++;
         if(attempt > 10) 
         {
@@ -45,15 +61,8 @@ float newtonFindZero(float (*f)(float value_x, float p_x, float p_y, StateInfo* 
     return guess;
 }
 
-float squareDistancePointCurve(float (*f)(float value_x, StateInfo* state), 
-        float x, StateInfo* state, float p_x, float p_y)
+float squareDistancePointCurve(float x, StateInfo* state, float p_x, float p_y)
 {
-    return sqr((x-p_x)) + sqr(f(x, state)-p_y);
+    return powf((x-p_x), 2) + powf(parabola(x, state)-p_y, 2);
 }
-
-float squareDerivDistPointCurve(float x, float p_x, float p_y, StateInfo* state)
-{
-    return 2 * (2 * state->parab_a * (x-state->parab_h) * (state->parab_a * sqr(x-state->parab_h) + state->parab_k - p_y) - p_x + x);
-}
-
 #endif

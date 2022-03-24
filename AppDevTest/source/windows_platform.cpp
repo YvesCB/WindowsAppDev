@@ -83,25 +83,38 @@ internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
         uint32_t *pixel = (uint32_t *)row;
         for (int x = 0; x < buffer->width*superSample; x+=superSample)
         {
-            factor = 0.0f;
-            for (int i = 0; i < superSample; i++)
-            {
-                for (int k = 0; k < superSample; k++)
-                {
-                    //if (sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) >= sqr(state->circ_r) && 
-                         //sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) <= sqr(state->circ_r + 10))
+            //factor = 0.0f;
+            //for (int i = 0; i < superSample; i++)
+            //{
+                //for (int k = 0; k < superSample; k++)
+                //{
+                    ////if (sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) >= sqr(state->circ_r) && 
+                         ////sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) <= sqr(state->circ_r + 10))
                     
-                    float x_mindist = newtonFindZero(squareDerivDistPointCurve, x, y, state); 
-                    float minDistSqr = squareDistancePointCurve(parabola, x_mindist, state, x, y);
-                    if (minDistSqr <= 16)
-                    {
-                        factor += 1.0f/(superSample*superSample);
-                    }
+                    //float x_mindist = newtonFindZero(x, y, state); 
+                    //float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
+                    //if (minDistSqr <= 16)
+                    //{
+                        //factor += 1.0f/(superSample*superSample);
+                    //}
 
-                }
+                //}
 
+            //}
+            float x_mindist = newtonFindZero(x, y, state); 
+            float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
+            if (x == 844 && y == 391)
+            {
+                int x = 1;
             }
-            *pixel++ = (uint32_t)(factor * (200 << 16 | 200 << 8 | 200));
+            if (minDistSqr <= 400)
+            {
+                *pixel++ = (uint32_t)((200 << 16 | 200 << 8 | 200));
+            }
+            else 
+            {
+                *pixel++ = 0;
+            }
             //uint8_t blue = (uint8_t)x;
             //uint8_t green = (uint8_t)y;
 
@@ -140,7 +153,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     pState->parab_k = 600.0f;
     pState->parab_a = -0.005f;
 
-    render(&globalBackBuffer, pState, 2);
+    render(&globalBackBuffer, pState, 1);
 
     if (pState == NULL)
     {
@@ -212,7 +225,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            render(&globalBackBuffer, pState, 2);
+            render(&globalBackBuffer, pState, 1);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);
@@ -222,27 +235,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         if (wParam == VK_UP) 
         {
-            pState->circ_pos_y -= 5;
+            pState->parab_k -= 5;
         }
         if (wParam == VK_DOWN)
         {
-            pState->circ_pos_y += 5;
+            pState->parab_k += 5;
         }
         if (wParam == VK_RIGHT)
         {
-            pState->circ_pos_x += 5;
+            pState->parab_h += 5;
         }
         if (wParam == VK_LEFT)
         {
-            pState->circ_pos_x -= 5;
+            pState->parab_h -= 5;
         }
         if (wParam == 'W')
         {
-            pState->circ_r += 2;
+            pState->parab_a += 2;
         }
         if (wParam == 'S')
         {
-            pState->circ_r -= 2;
+            pState->parab_a -= 2;
         }
         if (wParam == 'A')
         {

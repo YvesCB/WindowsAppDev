@@ -1,5 +1,6 @@
 # Directories
 /x64
+/AppDevTest/.vs
 
 # Prerequisites
 *.d
