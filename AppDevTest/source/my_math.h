@@ -11,7 +11,7 @@ inline float sqr(float x)
 
 inline float parabola(float x, StateInfo* state)
 {
-    return state->parab_a*(x-state->parab_h)*(x-state->parab_h) +state->parab_k;
+    return state->parab_a*(x-state->parab_h)*(x-state->parab_h) + state->parab_k;
 };
 
 
@@ -33,16 +33,16 @@ float newtonFindZero(float p_x, float p_y, StateInfo* state)
 {
     float margin = 0.001f;
     int attempt = 0;
-    float guess = 1.0f;
+    float guess = p_x;
 
-    if(p_x <= state->parab_h)
-    {
-        guess = p_x + (state->parab_h - p_x) / 2.0f;
-    }
-    else 
-    {
-        guess = p_x - (p_x - state->parab_h) / 2.0f;    
-    }
+    //if(p_x <= state->parab_h)
+    //{
+        //guess = p_x + (state->parab_h - p_x) / 2.0f;
+    //}
+    //else 
+    //{
+        //guess = p_x - (p_x - state->parab_h) / 2.0f;    
+    //}
 
     float squareDerivAtGuess = 1.0f;
 

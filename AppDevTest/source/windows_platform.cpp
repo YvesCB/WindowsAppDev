@@ -77,6 +77,7 @@ internal Dimensions getWindowDimensions(HWND window)
 internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
 {
     float factor = 0.0f;
+    float thickness = 8.0f;
     uint8_t *row = (uint8_t *)buffer->memory;
     for (int y = 0; y < buffer->height*superSample; y+=superSample)
     {
@@ -101,17 +102,24 @@ internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
                 //}
 
             //}
-            float x_mindist = newtonFindZero(x, y, state); 
-            float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
-            if (x == 844 && y == 391)
+            if (fabsf(parabola(x, state) - y) < 4 * thickness)
             {
-                int x = 1;
+                float x_mindist = newtonFindZero(x, y, state); 
+                float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
+                if (x == 844 && y == 391)
+                {
+                    int x = 1;
+                }
+                if (minDistSqr <= sqr(thickness))
+                {
+                    *pixel++ = (uint32_t)((200 << 16 | 200 << 8 | 200));
+                }
+                else 
+                {
+                    *pixel++ = 0;
+                }
             }
-            if (minDistSqr <= 400)
-            {
-                *pixel++ = (uint32_t)((200 << 16 | 200 << 8 | 200));
-            }
-            else 
+            else
             {
                 *pixel++ = 0;
             }
@@ -251,11 +259,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         if (wParam == 'W')
         {
-            pState->parab_a += 2;
+            pState->parab_a += 0.0005f;
         }
         if (wParam == 'S')
         {
-            pState->parab_a -= 2;
+            pState->parab_a -= 0.0005f;
         }
         if (wParam == 'A')
         {
