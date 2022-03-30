@@ -22,7 +22,7 @@ inline float squareDerivDistPointCurve(float x, float p_x, float p_y, StateInfo*
 
 float deriveAtX(float x, float p_x, float p_y, StateInfo* state)
 {
-    float eps = 0.01f;
+    float eps = 0.1f;
     float sample1 = (squareDerivDistPointCurve(x+eps, p_x, p_y, state) - squareDerivDistPointCurve(x, p_x, p_y, state))/eps; 
     float sample2 = (squareDerivDistPointCurve(x-eps, p_x, p_y, state) - squareDerivDistPointCurve(x, p_x, p_y, state))/(-1*eps); 
 
@@ -31,7 +31,7 @@ float deriveAtX(float x, float p_x, float p_y, StateInfo* state)
 
 float newtonFindZero(float p_x, float p_y, StateInfo* state)
 {
-    float margin = 0.001f;
+    float margin = 0.01f;
     int attempt = 0;
     float guess = p_x;
 

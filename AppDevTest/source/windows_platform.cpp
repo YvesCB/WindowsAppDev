@@ -73,56 +73,128 @@ internal Dimensions getWindowDimensions(HWND window)
     return(result);
 }
 
+internal uint8_t checkNewtonFourCorners(float x, float y, StateInfo *state, int superPixelSize, float thickness)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
+            float x_mindist = newtonFindZero((x+k)*superPixelSize, (y+k)*superPixelSize, state);
+            float minDistSqr = squareDistancePointCurve(x_mindist, state, (x+k)*superPixelSize, (y+i)*superPixelSize);
+            if (minDistSqr <= sqr(thickness))
+            {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+internal uint8_t checkNewton(float x, float y, StateInfo *state, int superPixelSize, float thickness)
+{
+    float x_mindist = newtonFindZero(x, y, state);
+    float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
+    if (minDistSqr <= sqr(thickness))
+    {
+        return 1;
+    }
+    else
+    {
+
+        return 0;
+    }
+}
+
+internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int superPixelSize)
+{
+    // First we compute the super grid according to the superPixelSize
+    int superGridWidth = buffer->width/superPixelSize;
+    if (buffer->width % superPixelSize != 0)
+    {
+        superGridWidth++;
+    }
+
+    int superGridHeight = buffer->height/superPixelSize;
+    if (buffer->height % superPixelSize != 0)
+    {
+        superGridHeight++;
+    }
+
+    float thickness = 8.0f;
+
+    // Now we loop through the super grid
+    for (int super_y = 0; super_y < superGridHeight; super_y++)
+    {
+        for (int super_x = 0; super_x < superGridWidth; super_x++)
+        {
+            if (checkNewtonFourCorners(super_x, super_y, state, superPixelSize, thickness))
+            {
+                // Compute the starting pixel of the super grid cell
+                uint32_t *row = (uint32_t *)buffer->memory + (super_y*superPixelSize*buffer->width) + super_x*superPixelSize;
+                // Then loop through all the pixels in the cell
+                for (int y = super_y*superPixelSize; 
+                        y < super_y*superPixelSize+superPixelSize && y < buffer->height; 
+                        y++)
+                {
+                    uint32_t *pixel = row;
+
+                    for (int x = super_x*superPixelSize; 
+                            x < super_x*superPixelSize+superPixelSize && x < buffer->width; 
+                            x++)
+                    {
+                        if (checkNewton((float)x, (float)y, state, superPixelSize, thickness))
+                        {
+                            *pixel++ = (uint32_t)(200 << 16 | 200 << 8 | 200);
+                        }
+                        else 
+                        {
+                            *pixel++ = 0;
+                        }
+                    }
+                    
+                    row += buffer->width;
+                }
+            }
+        }
+    }
+}
 
 internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
 {
     float factor = 0.0f;
-    float thickness = 8.0f;
+    float thickness = 8.0f*superSample;
     uint8_t *row = (uint8_t *)buffer->memory;
     for (int y = 0; y < buffer->height*superSample; y+=superSample)
     {
         uint32_t *pixel = (uint32_t *)row;
         for (int x = 0; x < buffer->width*superSample; x+=superSample)
         {
-            //factor = 0.0f;
-            //for (int i = 0; i < superSample; i++)
-            //{
-                //for (int k = 0; k < superSample; k++)
-                //{
-                    ////if (sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) >= sqr(state->circ_r) && 
-                         ////sqr(x+i - state->circ_pos_x) + sqr(y+k - state->circ_pos_y) <= sqr(state->circ_r + 10))
-                    
+            factor = 0.0f;
+            for (int i = 0; i < superSample; i++)
+            {
+                for (int k = 0; k < superSample; k++)
+                {
+                    if (fabsf(parabola(x+k, state) - y+i) < 4 * thickness)
+                    {
+                        float x_mindist = newtonFindZero(x+k, y+i, state); 
+                        float minDistSqr = squareDistancePointCurve(x_mindist, state, x+k, y+i);
+
+                        if (minDistSqr <= sqr(thickness))
+                        {
+                            factor += 0.25f;
+                        }
                     //float x_mindist = newtonFindZero(x, y, state); 
                     //float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
                     //if (minDistSqr <= 16)
                     //{
                         //factor += 1.0f/(superSample*superSample);
-                    //}
+                    }
 
-                //}
+                }
 
-            //}
-            if (fabsf(parabola(x, state) - y) < 4 * thickness)
-            {
-                float x_mindist = newtonFindZero(x, y, state); 
-                float minDistSqr = squareDistancePointCurve(x_mindist, state, x, y);
-                if (x == 844 && y == 391)
-                {
-                    int x = 1;
-                }
-                if (minDistSqr <= sqr(thickness))
-                {
-                    *pixel++ = (uint32_t)((200 << 16 | 200 << 8 | 200));
-                }
-                else 
-                {
-                    *pixel++ = 0;
-                }
             }
-            else
-            {
-                *pixel++ = 0;
-            }
+            *pixel++ = (uint32_t)(factor*(200 << 16 | 200 << 8 | 200));
             //uint8_t blue = (uint8_t)x;
             //uint8_t green = (uint8_t)y;
 
@@ -158,10 +230,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     pState->circ_r = 50.0f;
     
     pState->parab_h = 640.0f;
-    pState->parab_k = 600.0f;
+    pState->parab_k = 1000.0f;
     pState->parab_a = -0.005f;
 
-    render(&globalBackBuffer, pState, 1);
+    renderGraphics(&globalBackBuffer, pState, 100);
 
     if (pState == NULL)
     {
@@ -233,7 +305,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            render(&globalBackBuffer, pState, 1);
+            renderGraphics(&globalBackBuffer, pState, 100);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);
