@@ -8,18 +8,11 @@
 
 struct StateInfo
 {
-    int rect_pos_x;
-    int rect_pos_y;
-    int rect_width;
-    int rect_height;
-
-    float circ_pos_x;
-    float circ_pos_y;
-    float circ_r;
-
     float parab_h;
     float parab_k;
     float parab_a;
+    
+    int showGrid = 0;
 };
 
 struct OffscreenBuffer

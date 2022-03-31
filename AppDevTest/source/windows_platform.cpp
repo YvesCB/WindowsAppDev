@@ -77,18 +77,23 @@ internal uint8_t checkSuperPixel(float x, float y, StateInfo *state, int superPi
     float center_x = x*superPixelSize + superPixelSize/2.0f;
     float center_y = y*superPixelSize + superPixelSize/2.0f;
     float x_mindist = newtonFindZero(center_x, center_y, state);
-    float minDist= sqrtf(squareDistancePointCurve(x_mindist, state, center_x, center_y));
 
     v2f P = {x_mindist, parabola(x_mindist, state)};
     v2f C = {center_x, center_y};
 
-    float t = (thickness/2.0f) / sqrtf(sqr(C.x - P.x) + sqr(C.y - P.y));
+    if (vecLen(vecAdd(C, vecNeg(P))) < superPixelSize/2.0f)
+    {
+        return 1;
+    }
+
+    float t = (thickness) / sqrtf(sqr(C.x - P.x) + sqr(C.y - P.y));
 
     v2f Q = vecAdd(P, vecMult(vecAdd(C, vecNeg(P)), t));
 
     // Then check if Q is within the bounds of the super pixel
-    if (fabsf(Q.x - center_x) <= superPixelSize/2.0f &&
-            fabsf(Q.y - center_y) <= superPixelSize/2.0f)
+    float margin = 4.0f;
+    if (fabsf(Q.x - center_x) - margin <= superPixelSize/2.0f &&
+            fabsf(Q.y - center_y) - margin <= superPixelSize/2.0f)
     {
         return 1;
     }
@@ -152,16 +157,28 @@ internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int supe
                             x < super_x*superPixelSize+superPixelSize && x < buffer->width; 
                             x++)
                     {
-                        if (checkNewton((float)x, (float)y, state, superPixelSize, thickness))
+                        float factor = 0.0f;
+                        for (int i = 0; i < 2; i++)
                         {
-                            *pixel++ = (uint32_t)(200 << 16 | 200 << 8 | 200);
+                            for (int k = 0; k < 2; k++)
+                            {
+                                if (checkNewton((float)(x+i/4.0f), (float)(y+k/4.0f), state, superPixelSize, thickness))
+                                {
+                                    factor += 0.25f;
+                                }
+                            }
+                        }
+                        // TODO: fix this. Currently doesn't work cause if factor = 0, we get black instead of red.
+                        if (state->showGrid)
+                        {
+                            *pixel++ = (uint32_t)((int)(200 + factor*0) << 16 | (int)(0 + factor*200) << 8 | (int)(0 + factor*200));
                         }
                         else 
                         {
-                            *pixel++ = 0;
+                            *pixel++ = (uint32_t)((int)(0 + factor*200) << 16 | (int)(0 + factor*200) << 8 | (int)(0 + factor*200));
                         }
                     }
-                    
+
                     row += buffer->width;
                 }
             }
@@ -169,6 +186,7 @@ internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int supe
     }
 }
 
+// Legacy render code
 internal void render(OffscreenBuffer *buffer, StateInfo *state, int superSample)
 {
     float factor = 0.0f;
@@ -228,21 +246,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RegisterClass(&wc);
 
     StateInfo *pState = (StateInfo*) VirtualAlloc(NULL, sizeof(StateInfo*), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-
-    pState->rect_pos_y = 100;
-    pState->rect_pos_x = 100;
-    pState->rect_width = 100;
-    pState->rect_height = 100;
-
-    pState->circ_pos_x = 200.0f;
-    pState->circ_pos_y = 200.0f;
-    pState->circ_r = 50.0f;
-    
     pState->parab_h = 640.0f;
-    pState->parab_k = 1000.0f;
+    pState->parab_k = 600.0f;
     pState->parab_a = -0.005f;
 
-    renderGraphics(&globalBackBuffer, pState, 100);
+    renderGraphics(&globalBackBuffer, pState, 10);
 
     if (pState == NULL)
     {
@@ -314,7 +322,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            renderGraphics(&globalBackBuffer, pState, 100);
+            renderGraphics(&globalBackBuffer, pState, 10);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);
@@ -348,11 +356,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         if (wParam == 'A')
         {
-            pState->rect_width -= 2;
-        }
-        if (wParam == 'D')
-        {
-            pState->rect_width += 2;
+            pState->showGrid = !(pState->showGrid);
         }
         RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE|RDW_INTERNALPAINT);
         return 0;
