@@ -8,9 +8,6 @@
 
 #include "my_math.h"
 
-#define global_variable static
-#define internal static
-
 global_variable OffscreenBuffer globalBackBuffer;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -73,22 +70,32 @@ internal Dimensions getWindowDimensions(HWND window)
     return(result);
 }
 
-internal uint8_t checkNewtonFourCorners(float x, float y, StateInfo *state, int superPixelSize, float thickness)
+internal uint8_t checkSuperPixel(float x, float y, StateInfo *state, int superPixelSize, float thickness)
 {
-    for (int i = 0; i < 2; i++)
-    {
-        for (int k = 0; k < 2; k++)
-        {
-            float x_mindist = newtonFindZero((x+k)*superPixelSize, (y+k)*superPixelSize, state);
-            float minDistSqr = squareDistancePointCurve(x_mindist, state, (x+k)*superPixelSize, (y+i)*superPixelSize);
-            if (minDistSqr <= sqr(thickness))
-            {
-                return 1;
-            }
-        }
-    }
+    // We check the minimum distance between the center of the super pixel and the curve
+    // We calculate t in Q = P + CP*t such that |CP*t| = d
+    float center_x = x*superPixelSize + superPixelSize/2.0f;
+    float center_y = y*superPixelSize + superPixelSize/2.0f;
+    float x_mindist = newtonFindZero(center_x, center_y, state);
+    float minDist= sqrtf(squareDistancePointCurve(x_mindist, state, center_x, center_y));
 
-    return 0;
+    v2f P = {x_mindist, parabola(x_mindist, state)};
+    v2f C = {center_x, center_y};
+
+    float t = (thickness/2.0f) / sqrtf(sqr(C.x - P.x) + sqr(C.y - P.y));
+
+    v2f Q = vecAdd(P, vecMult(vecAdd(C, vecNeg(P)), t));
+
+    // Then check if Q is within the bounds of the super pixel
+    if (fabsf(Q.x - center_x) <= superPixelSize/2.0f &&
+            fabsf(Q.y - center_y) <= superPixelSize/2.0f)
+    {
+        return 1;
+    }
+    else 
+    {
+        return 0;
+    }
 }
 
 internal uint8_t checkNewton(float x, float y, StateInfo *state, int superPixelSize, float thickness)
@@ -108,6 +115,8 @@ internal uint8_t checkNewton(float x, float y, StateInfo *state, int superPixelS
 
 internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int superPixelSize)
 {
+    // Zero the frame buffer
+    memset(buffer->memory, 0, (buffer->height*buffer->width)*buffer->bytesPerPixel);
     // First we compute the super grid according to the superPixelSize
     int superGridWidth = buffer->width/superPixelSize;
     if (buffer->width % superPixelSize != 0)
@@ -128,7 +137,7 @@ internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int supe
     {
         for (int super_x = 0; super_x < superGridWidth; super_x++)
         {
-            if (checkNewtonFourCorners(super_x, super_y, state, superPixelSize, thickness))
+            if (checkSuperPixel(super_x, super_y, state, superPixelSize, thickness))
             {
                 // Compute the starting pixel of the super grid cell
                 uint32_t *row = (uint32_t *)buffer->memory + (super_y*superPixelSize*buffer->width) + super_x*superPixelSize;

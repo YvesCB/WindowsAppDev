@@ -3,6 +3,9 @@
 
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
+#define global_variable static
+#define internal static
+
 struct StateInfo
 {
     int rect_pos_x;
