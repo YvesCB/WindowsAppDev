@@ -157,17 +157,46 @@ internal void renderGraphics(OffscreenBuffer *buffer, StateInfo *state, int supe
                             x < super_x*superPixelSize+superPixelSize && x < buffer->width; 
                             x++)
                     {
-                        float factor = 0.0f;
-                        for (int i = 0; i < 2; i++)
+                        if (x == 640 && y == 600)
                         {
-                            for (int k = 0; k < 2; k++)
+                            int z = 0;
+                        }
+
+                        float factor = 0.0f;
+                        float center_x = x + 0.5f;
+                        float center_y = y + 0.5f;
+                        float x_mindist = newtonFindZero(center_x, center_y, state);
+
+                        v2f P = {x_mindist, parabola(x_mindist, state)};
+                        v2f C = {center_x, center_y};
+
+                        float t = (thickness) / sqrtf(sqr(C.x - P.x) + sqr(C.y - P.y));
+
+                        v2f Q = vecAdd(P, vecMult(vecAdd(C, vecNeg(P)), t));
+
+                        if (t >= 1.0f && (fabsf(C.x - Q.x) >= 0.5f || fabsf(C.y - Q.y) >= 0.5f))
+                        {
+                            factor = 1.0f;
+                        }
+                        else if (fabsf(C.x - Q.x) < 0.5f && fabsf(C.y - Q.y) < 0.5f)
+                        {
+                            float distQC = vecDist(Q, C);
+                            if (distQC < 0.2f)
                             {
-                                if (checkNewton((float)(x+i/4.0f), (float)(y+k/4.0f), state, superPixelSize, thickness))
+                                factor = 0.5f;
+                            }
+                            else
+                            {
+                                if (t >= 1)
                                 {
-                                    factor += 0.25f;
+                                    factor = 0.75f;
+                                }
+                                else {
+                                    factor = 0.25f;
                                 }
                             }
                         }
+
                         // TODO: fix this. Currently doesn't work cause if factor = 0, we get black instead of red.
                         if (state->showGrid)
                         {
@@ -250,7 +279,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     pState->parab_k = 600.0f;
     pState->parab_a = -0.005f;
 
-    renderGraphics(&globalBackBuffer, pState, 10);
+    renderGraphics(&globalBackBuffer, pState, 20);
 
     if (pState == NULL)
     {
@@ -322,7 +351,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
 
             Dimensions dimension = getWindowDimensions(hwnd);
-            renderGraphics(&globalBackBuffer, pState, 10);
+            renderGraphics(&globalBackBuffer, pState, 20);
             displayBufferInWindow(&globalBackBuffer, hdc, dimension.width, dimension.height);
 
             EndPaint(hwnd, &ps);

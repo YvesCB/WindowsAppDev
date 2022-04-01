@@ -4,6 +4,8 @@
 #include <math.h>
 #include "windows_platform.h"
 
+float SQR2 = 1.41421f;
+
 typedef struct v2f
 {
     float x;
@@ -43,6 +45,11 @@ v2f vecNeg(v2f a)
 float vecDot(v2f a, v2f b)
 {
     return (a.x*b.x + a.y*b.y);
+}
+
+float vecDist(v2f a, v2f b)
+{
+    return sqrtf((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
 }
 
 float vecLen(v2f a)
