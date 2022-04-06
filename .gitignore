@@ -1,5 +1,6 @@
 # Directories
 /AppDevTest/x64
+/AppDevTest/.vs
 /AppDevTest/source/.vs
 /AppDevTest/build
 
