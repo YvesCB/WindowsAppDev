@@ -19,3 +19,6 @@ It also implements a very simple anti-aliasing method. Using some vector geometr
 
 ## RenderEngine
 In this project I will attempt to implement some rasterization and vector geometry methods of displaying 3D graphics. So far it is only the bare bones. Currently I'm trying to render some triangles on the screen by casting rays through the pixel raster and intersecting them with the geometry I define in memory.
+
+## Building the code
+If you want to build this code, make sure that you have the C/C++ build tools installed via Visual Studio on Windows. The build script relies on `vcvars64.bat` being included in `%PATH%`. You can find this batch script in your Visual Studio directory. Without it, the linker won't be able to find the required libraries.
