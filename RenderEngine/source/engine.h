@@ -19,6 +19,8 @@
     1 - Slow code welcome.
 */
 
+#include "vector_math.h"
+
 #if ENGINE_SLOW
 // TODO(casey): Complete assertion macro - don't worry everyone!
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
@@ -94,6 +96,31 @@ struct keyboard_input
     };
 };
 
+struct triangle
+{
+    v3f T0;
+    v3f T1;
+    v3f T2;
+
+    int32 Color;
+};
+
+struct geometry
+{
+    struct triangle *Triangles;    
+};
+
+struct engine_state
+{
+    v3f CameraPosition;
+    v3f CameraViewVector;
+
+    v3f CameraToScreenVector;
+    v3f CameraUpVector;
+
+    struct geometry SceneGeometry;
+};
+
 struct engine_memory
 {
     bool32 IsInitialized;
@@ -107,11 +134,7 @@ struct engine_memory
 
 internal void UpdateAndRender(engine_memory *Memory, keyboard_input *Input, offscreen_buffer *Buffer);
 
-struct engine_state
-{
-    int GreenOffset;
-    int BlueOffset;
-};
+internal void InitializeGeometry(engine_state *State);
 
 #define ENGINE_H
 #endif

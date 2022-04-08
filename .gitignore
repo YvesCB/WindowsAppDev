@@ -1,13 +1,13 @@
 # Directories
-/AppDevTest/x64
-/AppDevTest/.vs
-/AppDevTest/source/.vs
-/AppDevTest/build
+AppDevTest/x64
+AppDevTest/.vs
+AppDevTest/source/.vs
+AppDevTest/build
 
-/RenderEngine/x64
-/RenderEngine/.vs
-/RenderEngine/source/.vs
-/RenderEngine/build
+RenderEngine/x64
+RenderEngine/.vs
+RenderEngine/source/.vs
+RenderEngine/build
 # Prerequisites
 *.d
 

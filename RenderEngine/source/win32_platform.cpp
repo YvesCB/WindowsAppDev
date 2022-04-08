@@ -141,6 +141,12 @@ Win32MainWindowCallback(HWND Window,
             GlobalRunning = false;
         } break;
 
+        case WM_SIZE:
+        {
+            win32_window_dimension Dimension = Win32GetWindowDimension(Window);
+            Win32ResizeDIBSection(&GlobalBackBuffer, Dimension.Width, Dimension.Height);
+        } break;
+
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         case WM_KEYDOWN:
@@ -368,14 +374,12 @@ WinMain(HINSTANCE Instance,
                 LARGE_INTEGER FlipWallClock = Win32GetWallClock();
 
                 uint64 LastCycleCount = __rdtsc();
+
+                keyboard_input Keyboard = {};
                 while(GlobalRunning)
                 {
-                    // TODO(casey): Zeroing macro
-                    // TODO(casey): We can't zero everything because the up/down state will
-                    // be wrong!!!
-                    keyboard_input *Keyboard = {};
 
-                    Win32ProcessPendingMessages(Keyboard);
+                    Win32ProcessPendingMessages(&Keyboard);
 
                     if(!GlobalPause)
                     {
@@ -384,7 +388,7 @@ WinMain(HINSTANCE Instance,
                         Buffer.Width = GlobalBackBuffer.Width; 
                         Buffer.Height = GlobalBackBuffer.Height;
                         Buffer.Pitch = GlobalBackBuffer.Pitch; 
-                        UpdateAndRender(&EngineMemory, Keyboard, &Buffer);
+                        UpdateAndRender(&EngineMemory, &Keyboard, &Buffer);
 
                         LARGE_INTEGER WorkCounter = Win32GetWallClock();
                         real32 WorkSecondsElapsed = Win32GetSecondsElapsed(LastCounter, WorkCounter);
@@ -428,6 +432,8 @@ WinMain(HINSTANCE Instance,
                 
                         win32_window_dimension Dimension = Win32GetWindowDimension(Window);
 
+                        Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
+
                         FlipWallClock = Win32GetWallClock();
 
                         // TODO(casey): Should I clear these here?
@@ -436,7 +442,7 @@ WinMain(HINSTANCE Instance,
                         uint64 CyclesElapsed = EndCycleCount - LastCycleCount;
                         LastCycleCount = EndCycleCount;
                     
-                        real64 FPS = 0.0f;
+                        real64 FPS = 1.0f / MSPerFrame * 1000.0f;
                         real64 MCPF = ((real64)CyclesElapsed / (1000.0f * 1000.0f));
 
                         char FPSBuffer[256];
