@@ -307,8 +307,6 @@ WinMain(HINSTANCE Instance,
     QueryPerformanceFrequency(&PerfCountFrequencyResult);
     GlobalPerfCountFrequency = PerfCountFrequencyResult.QuadPart;
 
-    // NOTE(casey): Set the Windows scheduler granularity to 1ms
-    // so that our Sleep() can be more granular.
     UINT DesiredSchedulerMS = 1;
     bool32 SleepIsGranular = (timeBeginPeriod(DesiredSchedulerMS) == TIMERR_NOERROR);
     
@@ -322,7 +320,6 @@ WinMain(HINSTANCE Instance,
 //    WindowClass.hIcon;
     WindowClass.lpszClassName = "Engine in C";
 
-    // TODO(casey): How do we reliably query on this on Windows?
 #define MonitorRefreshHz 60
 #define UpdateHz (MonitorRefreshHz / 2)
     real32 TargetSecondsPerFrame = 1.0f / (real32)UpdateHz;    
@@ -344,7 +341,7 @@ WinMain(HINSTANCE Instance,
                 0);
         if(Window)
         {
-            // NOTE(casey): Since we specified CS_OWNDC, we can just
+            // NOTE: Since we specified CS_OWNDC, we can just
             // get one device context and use it forever because we
             // are not sharing it with anyone.
             HDC DeviceContext = GetDC(Window);
@@ -361,7 +358,7 @@ WinMain(HINSTANCE Instance,
             EngineMemory.PermanentStorageSize = Megabytes(64);
             EngineMemory.TransientStorageSize = Gigabytes(1);
 
-            // TODO(casey): Handle various memory footprints (USING SYSTEM METRICS)
+            // TODO(yves): Handle various memory footprints (USING SYSTEM METRICS)
             uint64 TotalSize = EngineMemory.PermanentStorageSize + EngineMemory.TransientStorageSize;
             EngineMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
                                                        MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
@@ -393,7 +390,6 @@ WinMain(HINSTANCE Instance,
                         LARGE_INTEGER WorkCounter = Win32GetWallClock();
                         real32 WorkSecondsElapsed = Win32GetSecondsElapsed(LastCounter, WorkCounter);
 
-                        // TODO(casey): NOT TESTED YET!  PROBABLY BUGGY!!!!!
                         real32 SecondsElapsedForFrame = WorkSecondsElapsed;
                         if(SecondsElapsedForFrame < TargetSecondsPerFrame)
                         {                        
@@ -411,7 +407,7 @@ WinMain(HINSTANCE Instance,
                                                                                        Win32GetWallClock());
                             if(TestSecondsElapsedForFrame < TargetSecondsPerFrame)
                             {
-                                // TODO(casey): LOG MISSED SLEEP HERE
+                                // TODO(yves): LOG MISSED SLEEP HERE
                             }
                         
                             while(SecondsElapsedForFrame < TargetSecondsPerFrame)
@@ -422,8 +418,8 @@ WinMain(HINSTANCE Instance,
                         }
                         else
                         {
-                            // TODO(casey): MISSED FRAME RATE!
-                            // TODO(casey): Logging
+                            // TODO(yves): MISSED FRAME RATE!
+                            // TODO(yves): Logging
                         }
                 
                         LARGE_INTEGER EndCounter = Win32GetWallClock();
@@ -435,8 +431,6 @@ WinMain(HINSTANCE Instance,
                         Win32DisplayBufferInWindow(&GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
 
                         FlipWallClock = Win32GetWallClock();
-
-                        // TODO(casey): Should I clear these here?
 
                         uint64 EndCycleCount = __rdtsc();
                         uint64 CyclesElapsed = EndCycleCount - LastCycleCount;
@@ -455,17 +449,17 @@ WinMain(HINSTANCE Instance,
             }
             else
             {
-                // TODO(casey): Logging
+                // TODO(yves): Logging
             }
         }
         else
         {
-            // TODO(casey): Logging
+            // TODO(yves): Logging
         }
     }
     else
     {
-        // TODO(casey): Logging
+        // TODO(yves): Logging
     }
     
     return(0);

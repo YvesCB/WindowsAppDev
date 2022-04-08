@@ -11,8 +11,6 @@
 //internal void
 //RenderWeirdGradient(offscreen_buffer *Buffer, engine_memory *Memory)
 //{
-    //// TODO(casey): Let's see what the optimizer does
-
     //uint8 *Row = (uint8 *)Buffer->Memory;    
     //for(int Y = 0;
         //Y < Buffer->Height;
@@ -92,13 +90,11 @@ UpdateAndRender(engine_memory *Memory, keyboard_input *Keyboard, offscreen_buffe
     engine_state *EngineState = (engine_state *)Memory->PermanentStorage;
     if(!Memory->IsInitialized)
     {
-        // TODO(casey): This may be more appropriate to do in the platform layer
         Memory->IsInitialized = true;
     }
 
     InitializeGeometry(EngineState);
 
-    // NOTE(casey): Use digital movement tuning
     if(Keyboard->MoveLeft.EndedDown)
     {
         //EngineState->BlueOffset -= 1;

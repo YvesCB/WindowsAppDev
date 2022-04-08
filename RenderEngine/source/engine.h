@@ -8,8 +8,6 @@
    ======================================================================== */
 
 /*
-  NOTE(casey):
-
   ENGINE_INTERNAL:
     0 - Build for public release
     1 - Build for developer only
@@ -22,7 +20,6 @@
 #include "vector_math.h"
 
 #if ENGINE_SLOW
-// TODO(casey): Complete assertion macro - don't worry everyone!
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #else
 #define Assert(Expression)
@@ -34,26 +31,23 @@
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
-// TODO(casey): swap, min, max ... macros???
 
 inline uint32
 SafeTruncateUInt64(uint64 Value)
 {
-    // TODO(casey): Defines for maximum values
     Assert(Value <= 0xFFFFFFFF);
     uint32 Result = (uint32)Value;
     return(Result);
 }
 
 /*
-  NOTE(casey): Services that the platform layer provides to the game
+  NOTE: Services that the platform layer provides to the game
 */
 // FOUR THINGS - timing, controller/keyboard input, bitmap buffer to use, sound buffer to use
 
-// TODO(casey): In the future, rendering _specifically_ will become a three-tiered abstraction!!!
 struct offscreen_buffer
 {
-    // NOTE(casey): Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
+    // NOTE: Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
     void *Memory;
     int Width;
     int Height;
@@ -89,7 +83,7 @@ struct keyboard_input
             button_state Back;
             button_state Start;
 
-            // NOTE(casey): All buttons must be added above this line
+            // NOTE: All buttons must be added above this line
             
             button_state Terminator;
         };
@@ -126,10 +120,10 @@ struct engine_memory
     bool32 IsInitialized;
 
     uint64 PermanentStorageSize;
-    void *PermanentStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *PermanentStorage; // NOTE: REQUIRED to be cleared to zero at startup
 
     uint64 TransientStorageSize;
-    void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *TransientStorage; // NOTE: REQUIRED to be cleared to zero at startup
 };
 
 internal void UpdateAndRender(engine_memory *Memory, keyboard_input *Input, offscreen_buffer *Buffer);
