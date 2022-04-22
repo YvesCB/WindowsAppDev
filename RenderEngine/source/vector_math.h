@@ -49,5 +49,17 @@ v3f vNorm(v3f A)
     return (vScale(Res, (1.0f/vLen(Res))));
 }
 
+int CheckZero(float A, float eps)
+{
+    if(fabsf(0.0f - A) < eps)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 #define VECTOR_MATH_H
 #endif

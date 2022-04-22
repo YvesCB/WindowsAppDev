@@ -30,6 +30,8 @@
 #define Gigabytes(Value) (Megabytes(Value)*1024LL)
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
+#define EPS 0.00001f
+
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
 inline uint32
@@ -95,6 +97,9 @@ struct triangle
     v3f T0;
     v3f T1;
     v3f T2;
+
+    v3f N;
+    float D;
 
     int32 Color;
 };
