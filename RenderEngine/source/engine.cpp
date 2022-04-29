@@ -95,6 +95,8 @@ RenderGeometry(offscreen_buffer *Buffer, engine_state *State)
             CurrentPixel = vAdd(CurrentPixel, StepX);
         }
         CurrentPixel = vAdd(CurrentPixel, StepY);
+        v3f XReset = vScale(StepX, (float)-Buffer->Width);
+        CurrentPixel = vAdd(CurrentPixel, XReset);
         
         Row += Buffer->Pitch;
     }

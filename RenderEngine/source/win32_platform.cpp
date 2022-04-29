@@ -348,7 +348,7 @@ WinMain(HINSTANCE Instance,
 
             GlobalRunning = true;
 
-#if HANDMADE_INTERNAL
+#if ENGINE_INTERNAL
             LPVOID BaseAddress = (LPVOID)Terabytes(2);
 #else
             LPVOID BaseAddress = 0;
